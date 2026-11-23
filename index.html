@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1222" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fbf8f1" media="(prefers-color-scheme: light)">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Satta7 · สัตตเลขชาตา</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<style>
+html,body{margin:0;padding:0;height:100%;background:#0b1222;color:#e7ecf7;font:16px/1.5 system-ui,"Noto Sans Thai",sans-serif;overflow:hidden}
+@media (prefers-color-scheme: light){html,body{background:#fbf8f1;color:#211f1a}}
+#app{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0;display:block;background:transparent}
+#boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;text-align:center;padding:24px}
+#boot b{font-size:20px}#boot small{opacity:.7}
+.dlgw{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.45)}
+.dlg{width:100%;max-width:360px;max-height:90vh;overflow:auto;box-sizing:border-box;border-radius:16px;padding:16px;background:#17213a;color:#e7ecf7;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+@media (prefers-color-scheme: light){.dlg{background:#fffdf8;color:#211f1a}}
+.dt{font-weight:700;font-size:17px;text-align:center;margin-bottom:6px}
+.dm{font-size:14px;opacity:.85;text-align:center;margin-bottom:12px;white-space:pre-line}
+.db{display:block;width:100%;margin:6px 0 0;padding:12px;border:0;border-radius:11px;font:inherit;font-size:16px;background:#2e3d64;color:inherit;text-align:center}
+@media (prefers-color-scheme: light){.db{background:#e3ded0}}
+.db.dc{background:transparent;opacity:.8}
+.dta{width:100%;box-sizing:border-box;min-height:120px;border-radius:10px;padding:8px;font:13px/1.4 monospace;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div id="boot"><b>🔮 Satta7</b><span>กำลังเปิดแอป…</span><small id="bootmsg"></small></div>
+<iframe id="app" title="Satta7"></iframe>
+<noscript><p style="padding:20px">ต้องเปิด JavaScript จึงจะใช้แอปนี้ได้</p></noscript>
+<script>
+window.addEventListener("error", function (e) { var m = document.getElementById("bootmsg"); if (m) m.textContent = "เปิดไม่ได้: " + (e && e.message || e); });
+</script>
+<script src="host.js"></script>
+<script src="satta7.js" onload="var b=document.getElementById('boot');if(b)b.remove();" onerror="document.getElementById('bootmsg').textContent='โหลด satta7.js ไม่ได้ · ตรวจว่าไฟล์อยู่โฟลเดอร์เดียวกับ index.html';"></script>
+</body>
+</html>
