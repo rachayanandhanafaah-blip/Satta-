@@ -1,6 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║  Satta7 · สัตตเลขชาตา — ดูดวงเลข ๗ ตัว ๙ ฐาน จากวันเดือนปีเกิด (Scriptable) ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
+// v3.9.51 รอบ 89 (ไม่เปลี่ยนเลขรุ่น): เส้นคั่นช่วงข้างหน้าของมหาทักษาตรงกันทั้งแถว (ข้อตัดสิน 116)
 // v3.9.51 รอบ 88 (ไม่เปลี่ยนเลขรุ่น): เครดิตผู้สร้างและพัฒนาในหัวเมนู 🔮 (ข้อตัดสิน 115)
 // v3.9.51 รอบ 87 (ไม่เปลี่ยนเลขรุ่น): ผังจำลองดูรายเรื่อง (ชิป + เส้นเวลา) · การ์ดมหาทักษาอ่านง่าย ป้ายช่วงดี/ระวัง คำอ่านรายเรื่อง · เครดิตผู้พัฒนา (ข้อตัดสิน 112–114)
 // v3.9.51 รอบ 85 (ไม่เปลี่ยนเลขรุ่น): ปุ่มดวงจรเรียง ปี เดือน วัน ยาม · คำแสดงตำแหน่งตำหนิธนังเรียงเหมือนมาตา (ข้อตัดสิน 107–108)
@@ -939,7 +940,7 @@ body.big .ans,body.big .s7,body.big .arow{font-size:15.5px}body.big .s7h{font-si
 .dev .dvt{min-width:0}.dev .dvl{font-size:12px;letter-spacing:.06em;color:var(--sub)}.dev .dvn{font-size:20px;font-weight:800;line-height:1.35;color:var(--tx)}.dev .dvs{font-size:12.5px;color:var(--tx3);margin-top:2px}
 .mte{margin:8px 0 10px;padding:10px 12px;border-radius:12px;background:var(--acc2);color:var(--tx)}.mte .mth{font-size:15px;line-height:1.5}.mte .pill{margin-left:4px}
 .mtr{display:flex;gap:8px;padding:5px 0;border-top:1px solid var(--line);font-size:14px;line-height:1.5}.mtr:first-of-type{border-top:0}.mtr .mti{flex:none;width:22px;text-align:center}.mtr .g{color:var(--good)}.mtr .b{color:var(--bad)}
-.mtn{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;font-size:13.5px}.mtn>div{padding:5px 0;border-top:1px solid var(--line)}.mtn .mt0{color:var(--sub);white-space:nowrap}.mtn small{color:var(--tx3)}
+.mtn{font-size:13.5px}.mtw{display:grid;grid-template-columns:8.6em minmax(0,1fr) auto;column-gap:10px;align-items:start;padding:7px 0;border-top:1px solid var(--line)}.mtw:last-child{border-bottom:1px solid var(--line)}.mtw .mt0{color:var(--sub);line-height:1.5}.mtw small{color:var(--tx3);display:block;line-height:1.5}.mtw .pill{margin-left:0}
 .stq{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}.stq a{padding:4px 10px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--tx);background:var(--card);font-size:13.5px}
 .stq a.on{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:700}.stq a.x{color:var(--sub)}
 .stl{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:8px}.stl a{display:block;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--tx);background:var(--card);font-size:12.5px;line-height:1.45}
@@ -3121,7 +3122,7 @@ function mtCard(ch, nowIn) {
   const ahead = []; for (let i = 1; i <= 64; i++) { const j = ci + i; ahead.push({ r: A.L[j % 64], cy: A.cyc + Math.floor(j / 64) }); }
   const nG = ahead.find(x => mtPol(K(x.r)) === "g"), nB = ahead.find(x => mtPol(K(x.r)) === "b");
   const nx = x => `${esc(P[x.r.m].n)}เสวย ${esc(P[x.r.sub].n)}แทรก · เริ่ม ${esc(dAt(x.r, x.cy))}`;
-  const strip = ahead.slice(0, 8).map(x => `<div class="mt0">${esc(dAt(x.r, x.cy))}</div><div>${esc(P[x.r.m].n)} › <b>${esc(P[x.r.sub].n)}</b><br><small>${mtByTop(K(x.r)).map(t => MT_TOP[t.c][0]).join(" ")} ${esc(x.r.ev)}</small></div><div>${mtPill(K(x.r))}</div>`).join("");
+  const strip = ahead.slice(0, 8).map(x => `<div class="mtw"><div class="mt0">${esc(dAt(x.r, x.cy))}</div><div>${esc(P[x.r.m].n)} › <b>${esc(P[x.r.sub].n)}</b><small>${mtByTop(K(x.r)).map(t => MT_TOP[t.c][0]).join(" ")} ${esc(x.r.ev)}</small></div><div>${mtPill(K(x.r))}</div></div>`).join("");
   return `<div class="card"><h2>มหาทักษา ดาวเสวยอายุ <span>ตำรา ภาค ๒ หน้า ๓๐๑–๓๐๙</span></h2>
 <div class="mte"${hlA("mtM", hlPl(ch, c.m, c.sub, "มหาทักษา · ดาวเสวย " + P[c.m].n + " แทรก " + P[c.sub].n))}><div class="mth">อ่านง่าย ✎ ช่วงนี้ <b>${esc(P[c.m].n)}เสวย ${esc(P[c.sub].n)}แทรก</b> ${mtPill(K(c))}</div>
 <div class="kv sub" style="margin:2px 0 6px">${esc(dOf(c.from))} ถึง ${esc(dOf(c.to))} · เหลืออีก ${mtSpan(A.left)}</div>${topRows(K(c))}
@@ -5207,7 +5208,9 @@ function r43Check() {
     const ab = aboutHTML(null, {}, {}), i1 = ab.indexOf('class="dev"'), i2 = ab.indexOf("<h2>เกี่ยวกับแอป</h2>");
     T(i1 > 0 && i2 > i1 && ab.indexOf("ตุนท์ วิชธุว แพรขาว") > i1 && ab.indexOf("ผู้พัฒนา") > i1 && ab.indexOf("<h1>เกี่ยวกับและอ้างอิง</h1>") < i1, "R87 เครดิตผู้พัฒนา ตุนท์ วิชธุว แพรขาว อยู่บนสุดของหน้าเกี่ยวกับ (ใต้หัวหน้า ก่อนการ์ดเกี่ยวกับแอป)");
     T([h87, simTq(My), devCard()].every(h => h.indexOf("<style") < 0) && /\.dev \.dvm\{[^}]*width:52px/.test(CSS) && /\.stl\{[^}]*minmax\(96px,1fr\)/.test(CSS) && /\.mtn\{/.test(CSS), "R87 CSS ของการ์ดใหม่อยู่ในบล็อก CSS กลาง (ไม่ฝัง <style> ในเนื้อหาที่ถูกแปลงเป็นเลขไทย)");
-  T(menuMsg().split("\n").length === 4 && menuMsg().split("\n")[2] === DEV_MK && menuMsg().split("\n")[3] === "ตุนท์ วิชธุว แพรขาว" && menuMsg().indexOf("\n\n" + DEV_MK + "\n") > 0 && menuMsg().indexOf("ปรับปรุง") > 0, "R88 หัวเมนู 🔮 มีบรรทัด ✦ สร้างและพัฒนาโดย ✦ และชื่อผู้พัฒนา (host.js วาดเป็นแถบเด่น)"); }
+  T(menuMsg().split("\n").length === 4 && menuMsg().split("\n")[2] === DEV_MK && menuMsg().split("\n")[3] === "ตุนท์ วิชธุว แพรขาว" && menuMsg().indexOf("\n\n" + DEV_MK + "\n") > 0 && menuMsg().indexOf("ปรับปรุง") > 0, "R88 หัวเมนู 🔮 มีบรรทัด ✦ สร้างและพัฒนาโดย ✦ และชื่อผู้พัฒนา (host.js วาดเป็นแถบเด่น)");
+  { const h89 = mtCard(natalChart({ id: "r89", iso: "1992-12-12", time: "10:50", name: "x", sex: "f" }), new Date(2026, 10, 22, 12, 0)), g = (h89.match(/<div class="mtn">([\s\S]*?)<\/div>\n<div class="kv"/) || ["", ""])[1];
+    T((g.match(/<div class="mtw">/g) || []).length === 8 && (g.match(/<div class="mt0">/g) || []).length === 8 && !/<\/div><div class="mt0">/.test(g.replace(/<div class="mtw"><div class="mt0">/g, "")) && /\.mtw\{[^}]*border-top:1px solid var\(--line\)/.test(CSS) && !/\.mtn>div\{[^}]*border-top/.test(CSS), "R89 ช่วงข้างหน้า ๘ ช่วง: ๑ แถว = ๑ กล่อง .mtw เส้นคั่นเดียวเต็มแถว (ข้อตัดสิน 116)"); } }
   const cnt = [0, 0, 0, 0, 0]; let t2 = 0, v2bad = 0, row0 = 0;
   for (let d = 1; d <= 7; d++) for (let m = 1; m <= 12; m++) for (let y = 1; y <= 12; y++) { const c = chartOf(d, m, y), r = satRule(c);
     cnt[r.n1]++; if (r.v2) t2++; if (r.v2 && !(r.n1 >= 3 && r.n2 >= 1)) v2bad++; if (!r.show && satRowH(c)) row0++; }
