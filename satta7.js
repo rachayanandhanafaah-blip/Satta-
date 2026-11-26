@@ -1,6 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║  Satta7 · สัตตเลขชาตา — ดูดวงเลข ๗ ตัว ๙ ฐาน จากวันเดือนปีเกิด (Scriptable) ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
+// v3.9.51 รอบ 90 (ไม่เปลี่ยนเลขรุ่น): หัวการ์ด "ดวงจรวันนี้" เป็น "ดวงจร" (ข้อตัดสิน 117)
 // v3.9.51 รอบ 89 (ไม่เปลี่ยนเลขรุ่น): เส้นคั่นช่วงข้างหน้าของมหาทักษาตรงกันทั้งแถว (ข้อตัดสิน 116)
 // v3.9.51 รอบ 88 (ไม่เปลี่ยนเลขรุ่น): เครดิตผู้สร้างและพัฒนาในหัวเมนู 🔮 (ข้อตัดสิน 115)
 // v3.9.51 รอบ 87 (ไม่เปลี่ยนเลขรุ่น): ผังจำลองดูรายเรื่อง (ชิป + เส้นเวลา) · การ์ดมหาทักษาอ่านง่าย ป้ายช่วงดี/ระวัง คำอ่านรายเรื่อง · เครดิตผู้พัฒนา (ข้อตัดสิน 112–114)
@@ -2402,14 +2403,14 @@ const notYetCard = (ch, now, h2, sub) => (ageYang(ch.born, now) < 1
 function trCard(ch, nowIn, Tin) {
   if (ch.synth || !ch.lunar || !ch.inTbl) return "";
   const now = (Tin && Tin.now) || nowIn || appNow();
-  const ny = notYetCard(ch, now, "ดวงจรวันนี้", "ตำรา ภาค ๒ หน้า ๑๙๘–๒๒๖"); if (ny) return ny;
+  const ny = notYetCard(ch, now, "ดวงจร", "ตำรา ภาค ๒ หน้า ๑๙๘–๒๒๖"); if (ny) return ny;
   const T = Tin || trNow(ch, now), astroNow = T.astroNow, Ln = T.Ln, age = T.age, Y = T.Y, M = T.M, D = T.D, Ym = T.Ym;
   const months = [...Array(12)].map((_, i) => trMonth(ch, i + 1));
   const days = [...Array(7)].map((_, i) => trDay(ch, i));
   const warnM = months.filter(x => x.lv < 0), goodM = months.filter(x => x.lv > 0);
   const nextY = trYear(ch, age + 1);
   const cell = t => `<td>${TH(t.sum)} <span class="${TR_CLS[t.lv]}">${mkW(t.word)}</span></td>`;
-  return `<div class="card"><h2>ดวงจรวันนี้ <span>ตำรา ภาค ๒ หน้า ๑๙๘–๒๒๖</span></h2>
+  return `<div class="card"><h2>ดวงจร <span>ตำรา ภาค ๒ หน้า ๑๙๘–๒๒๖</span></h2>
 <div class="kv" style="color:var(--tx3);font-size:11.5px">${esc(dateTH(now))}${Ln ? ` · ${esc(lunarLabel(Ln))}` : ""} · วันจรเปลี่ยนเวลา ๐๖:๐๐ ตามตำรา</div>
 ${TM("year", hlWrap("trY", hlTr(Y), trLine(Y) + trSay(Y)))}
 ${TM("month", M ? hlWrap("trM", hlTr(M), trLine(M) + trSay(M)) : `<div class="kv">• <b>เดือนจร</b> วันนี้อยู่นอกช่วงปฏิทินในตัว — ข้ามส่วนนี้</div>`)}
@@ -5210,7 +5211,9 @@ function r43Check() {
     T([h87, simTq(My), devCard()].every(h => h.indexOf("<style") < 0) && /\.dev \.dvm\{[^}]*width:52px/.test(CSS) && /\.stl\{[^}]*minmax\(96px,1fr\)/.test(CSS) && /\.mtn\{/.test(CSS), "R87 CSS ของการ์ดใหม่อยู่ในบล็อก CSS กลาง (ไม่ฝัง <style> ในเนื้อหาที่ถูกแปลงเป็นเลขไทย)");
   T(menuMsg().split("\n").length === 4 && menuMsg().split("\n")[2] === DEV_MK && menuMsg().split("\n")[3] === "ตุนท์ วิชธุว แพรขาว" && menuMsg().indexOf("\n\n" + DEV_MK + "\n") > 0 && menuMsg().indexOf("ปรับปรุง") > 0, "R88 หัวเมนู 🔮 มีบรรทัด ✦ สร้างและพัฒนาโดย ✦ และชื่อผู้พัฒนา (host.js วาดเป็นแถบเด่น)");
   { const h89 = mtCard(natalChart({ id: "r89", iso: "1992-12-12", time: "10:50", name: "x", sex: "f" }), new Date(2026, 10, 22, 12, 0)), g = (h89.match(/<div class="mtn">([\s\S]*?)<\/div>\n<div class="kv"/) || ["", ""])[1];
-    T((g.match(/<div class="mtw">/g) || []).length === 8 && (g.match(/<div class="mt0">/g) || []).length === 8 && !/<\/div><div class="mt0">/.test(g.replace(/<div class="mtw"><div class="mt0">/g, "")) && /\.mtw\{[^}]*border-top:1px solid var\(--line\)/.test(CSS) && !/\.mtn>div\{[^}]*border-top/.test(CSS), "R89 ช่วงข้างหน้า ๘ ช่วง: ๑ แถว = ๑ กล่อง .mtw เส้นคั่นเดียวเต็มแถว (ข้อตัดสิน 116)"); } }
+    T((g.match(/<div class="mtw">/g) || []).length === 8 && (g.match(/<div class="mt0">/g) || []).length === 8 && !/<\/div><div class="mt0">/.test(g.replace(/<div class="mtw"><div class="mt0">/g, "")) && /\.mtw\{[^}]*border-top:1px solid var\(--line\)/.test(CSS) && !/\.mtn>div\{[^}]*border-top/.test(CSS), "R89 ช่วงข้างหน้า ๘ ช่วง: ๑ แถว = ๑ กล่อง .mtw เส้นคั่นเดียวเต็มแถว (ข้อตัดสิน 116)"); }
+  { const c90 = natalChart({ id: "r90", iso: "1992-12-12", time: "10:50", name: "x", sex: "f" }), M90 = mpBuild(c90, null, null), P90 = mpRender(M90, { r: "tab", k: "s3", y: 0 }, "s3");
+    T(P90.indexOf("<h2>ดวงจร <span>ตำรา ภาค ๒ หน้า ๑๙๘–๒๒๖</span></h2>") > 0 && P90.indexOf("ดวงจรวันนี้") < 0, "R90 หัวการ์ดแท็บดวงจรเป็น \"ดวงจร\" (ไม่มีคำว่า วันนี้ · ข้อตัดสิน 117)"); } }
   const cnt = [0, 0, 0, 0, 0]; let t2 = 0, v2bad = 0, row0 = 0;
   for (let d = 1; d <= 7; d++) for (let m = 1; m <= 12; m++) for (let y = 1; y <= 12; y++) { const c = chartOf(d, m, y), r = satRule(c);
     cnt[r.n1]++; if (r.v2) t2++; if (r.v2 && !(r.n1 >= 3 && r.n2 >= 1)) v2bad++; if (!r.show && satRowH(c)) row0++; }
