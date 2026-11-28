@@ -1,5 +1,5 @@
-// Satta7 web host (รอบ 82) · ให้ satta7.js รุ่นเดียวกับ iPhone ทำงานบนเบราว์เซอร์ Android / PWA โดยไม่แก้ไฟล์แอป
-// แทนของ Scriptable 5 อย่าง: FileManager (→ localStorage) · WebView (→ iframe) · Alert (→ กล่อง HTML) · Script · Timer
+// Satta7 web host (รอบ 82 · รอบ 88 แถบเครดิตในหัวเมนู · รอบ 92 ปุ่มอัปเดตแอป · รอบ 98 ShareSheet แชร์สรุป) · ให้ satta7.js รุ่นเดียวกับ iPhone ทำงานบนเบราว์เซอร์ Android / PWA โดยไม่แก้ไฟล์แอป
+// แทนของ Scriptable 6 อย่าง: FileManager (→ localStorage) · WebView (→ iframe) · Alert (→ กล่อง HTML) · Script · Timer · ShareSheet (→ navigator.share / คัดลอก · รอบ 98)
 // ส่วนที่แตะ DOM อยู่ใน adapter (ฝั่งเบราว์เซอร์อยู่ท้ายไฟล์) · ชุดตรวจ host_test.js ใช้ adapter จำลองใน Node
 (function (G) {
   "use strict";
@@ -38,7 +38,7 @@
     const Script = { complete: () => {}, name: () => "Satta7" };
     // ---------- Alert ----------
     // แอปเรียง addAction ก่อน addCancelAction · present() คืนเลขปุ่ม (0, 1, …) · ปุ่มยกเลิกคืน -1 (เหมือน Scriptable)
-    // เมนู "🔮 …" ต่อท้ายด้วยปุ่มของ host (ส่งออก/นำเข้าดวง) · แอปได้ -1 จึงไม่ทำอะไร
+    // เมนู "🔮 …" ต่อท้ายด้วยปุ่มของ host (ส่งออก/นำเข้าดวง · รอบ 92 อัปเดตแอป) · แอปได้ -1 จึงไม่ทำอะไร
     class Alert {
       constructor() { this.title = ""; this.message = ""; this._a = []; this._c = null; }
       addAction(t) { this._a.push(String(t)); }
@@ -53,6 +53,11 @@
       presentAlert() { return this.present(); }
       presentSheet() { return this.present(); }
     }
+    // ---------- ShareSheet (รอบ 98 ข้อตัดสิน 144-2) ----------
+    // แอปส่งอาร์เรย์ข้อความ · adapter.share(text) คืน "shared" | "copied" | "shown" | "cancel"
+    const ShareSheet = { present: async items => {
+      const t = (items || []).map(x => String(x)).join("\n"), r = A.share ? await A.share(t) : "none"; bump();
+      return { completed: r === "shared" || r === "copied", activity_type: r }; } };
     // ---------- WebView ----------
     let CUR = null, HTML = "", SEQ = 0, waiters = [];
     const bump = () => { SEQ++; const w = waiters; waiters = []; w.forEach(f => f()); };
@@ -100,8 +105,13 @@
           const r = importData(t);
           await A.dialog({ title: r.ok ? "นำเข้าแล้ว" : "นำเข้าไม่ได้", message: r.ok ? `นำเข้า ${r.n} ดวง · รวมทั้งหมด ${r.total} ดวง${r.cut ? " (เก็บได้สูงสุด ๓๐ ดวง)" : ""}` : r.msg, actions: ["ตกลง"], cancel: null });
           if (r.ok) A.reload(); } },
+      // รอบ 92 ข้อ 122: ล้างแคชของแอปแล้วโหลดรุ่นล่าสุด · ไม่แตะ localStorage จึงไม่ลบดวง (แอปไม่ใช้ cookies)
+      { label: "🔄 อัปเดตแอป (ล้างแคช · ดวงไม่หาย)", run: async () => {
+          const i = await A.dialog({ title: "อัปเดตแอป", message: "ล้างไฟล์แอปที่เบราว์เซอร์เก็บไว้ แล้วโหลดรุ่นล่าสุดจากเว็บ\nดวงที่บันทึกไว้ไม่หาย · ต้องต่อเน็ตอยู่", actions: ["🔄 อัปเดตเลย"], cancel: "ยกเลิก" });
+          if (i !== 0) return;
+          if (A.refresh) await A.refresh(); else A.reload(); } },
     ];
-    return { globals: { FileManager, Timer, Script, Alert, WebView }, nav, back, waitNext, html: () => HTML, exportData, importData, _menu: HOST_MENU };
+    return { globals: { FileManager, Timer, Script, Alert, WebView, ShareSheet }, nav, back, waitNext, html: () => HTML, exportData, importData, _menu: HOST_MENU };
   }
 
   const API = { createHost, backTarget, rewritePage };
@@ -113,12 +123,25 @@
   catch (e) { const m = {}; store = { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: k => { delete m[k]; } }; G.__S7_NOSTORE = true; }
   function el(tag, attrs, kids) { const e = D.createElement(tag); Object.assign(e, attrs || {}); (kids || []).forEach(k => e.appendChild(typeof k === "string" ? D.createTextNode(k) : k)); return e; }
   let closeDlg = null;
+  // รอบ 88 (ข้อตัดสิน 115): หัวเมนู 🔮 มีบรรทัด "✦ สร้างและพัฒนาโดย ✦" ตามด้วยชื่อ → วาดเป็นแถบเครดิตเด่น (Scriptable แสดงเป็นข้อความเดิม)
+  const DEV_MK = "\n\n✦ สร้างและพัฒนาโดย ✦\n";
+  function dlgMsg(box, m) {
+    const k = m.indexOf(DEV_MK);
+    if (k < 0) { box.appendChild(el("div", { className: "dm" }, [m])); return; }
+    const top = m.slice(0, k).trim(), name = m.slice(k + DEV_MK.length).trim();
+    if (top) box.appendChild(el("div", { className: "dm" }, [top]));
+    const lab = el("div", {}, ["✦ สร้างและพัฒนาโดย ✦"]), nm = el("div", {}, [name]), cr = el("div", { className: "dcr" }, [lab, nm]);
+    cr.setAttribute("style", "margin:10px 0 12px;padding:14px 12px 13px;border-radius:14px;text-align:center;background:linear-gradient(135deg,#f3dc9f 0%,#d9b062 55%,#b8893a 100%);color:#2a1c05;box-shadow:0 3px 12px rgba(120,84,20,.28),inset 0 0 0 1px rgba(255,255,255,.45)");
+    lab.setAttribute("style", "font-size:12px;letter-spacing:.12em;font-weight:700;opacity:.78;margin-bottom:3px");
+    nm.setAttribute("style", "font-size:21px;font-weight:800;line-height:1.35;letter-spacing:.01em;text-shadow:0 1px 0 rgba(255,255,255,.5)");
+    box.appendChild(cr);
+  }
   function dialog(o) {
     return new Promise(res => {
       const box = el("div", { className: "dlg" }), wrap = el("div", { className: "dlgw" }, [box]);
       const done = i => { wrap.remove(); closeDlg = null; res(i); };
       if (o.title) box.appendChild(el("div", { className: "dt" }, [o.title]));
-      if (o.message) box.appendChild(el("div", { className: "dm" }, [o.message]));
+      if (o.message) dlgMsg(box, String(o.message));
       o.actions.forEach((t, i) => box.appendChild(el("button", { className: "db", onclick: () => done(i) }, [t])));
       if (o.cancel) box.appendChild(el("button", { className: "db dc", onclick: () => done(-1) }, [o.cancel]));
       wrap.addEventListener("click", e => { if (e.target === wrap && o.cancel) done(-1); });
@@ -140,10 +163,24 @@
       closeDlg = () => done(null); D.body.appendChild(wrap);
     });
   }
+  // รอบ 92 ข้อ 122: ยกเลิก service worker · ลบแคช satta7-web-* · ดึงไฟล์แอปใหม่ข้ามแคชเบราว์เซอร์ · โหลดใหม่ (localStorage คงเดิม)
+  async function refreshApp() {
+    try { const sw = G.navigator.serviceWorker; if (sw && sw.getRegistrations) { const rs = await sw.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); } } catch (e) {}
+    try { if (G.caches) { const ks = await G.caches.keys(); await Promise.all(ks.filter(k => /^satta7-web/.test(k)).map(k => G.caches.delete(k))); } } catch (e) {}
+    try { await Promise.all(["./", "index.html", "host.js", "satta7.js", "sw.js"].map(f => G.fetch(f, { cache: "reload" }).catch(() => null))); } catch (e) {}
+    try { const u = new URL(G.location.href); u.searchParams.set("u", Date.now().toString(36)); G.location.replace(u.toString()); } catch (e) { G.location.reload(); }
+  }
   async function exportFile(name, text) {
     try { const f = new File([text], name, { type: "application/json" });
       if (G.navigator.canShare && G.navigator.canShare({ files: [f] })) { await G.navigator.share({ files: [f], title: name }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
     const a = el("a", { href: URL.createObjectURL(new Blob([text], { type: "application/json" })), download: name }); D.body.appendChild(a); a.click(); a.remove();
+  }
+  // รอบ 98: แชร์ข้อความ · เมนูแชร์ของเครื่องก่อน · ไม่มีให้คัดลอก · คัดลอกไม่ได้ให้แสดงข้อความ
+  async function share(text) {
+    try { if (G.navigator.share) { await G.navigator.share({ text }); return "shared"; } } catch (e) { if (e && e.name === "AbortError") return "cancel"; }
+    try { if (G.navigator.clipboard && G.navigator.clipboard.writeText) { await G.navigator.clipboard.writeText(text);
+      await dialog({ title: "คัดลอกสรุปแล้ว", message: text, actions: [], cancel: "ปิด" }); return "copied"; } } catch (e) {}
+    await dialog({ title: "สรุปผังจำลอง", message: text + "\n\n(เบราว์เซอร์นี้แชร์ไม่ได้ · กดค้างที่ข้อความเพื่อคัดลอก)", actions: [], cancel: "ปิด" }); return "shown";
   }
   let pageWin = null;
   function render(html) {
@@ -166,7 +203,7 @@
     });
   }
   function evalPage(code) { try { return pageWin ? pageWin.eval(code) : 0; } catch (e) { return 0; } }
-  const H = createHost({ store, render, evalPage, dialog, askImport, exportFile, reload: () => G.location.reload() });
+  const H = createHost({ store, render, evalPage, dialog, askImport, exportFile, share, refresh: refreshApp, reload: () => G.location.reload() });
   // ปุ่มย้อนกลับ: เก็บสถานะประวัติไว้หนึ่งช่องเสมอ · กดย้อน → ปุ่มกลับของหน้า · ถ้าหน้าไม่เปลี่ยน (หน้าแรก) ปล่อยให้ออกจากแอป
   function go(u) { H.nav(u); }
   G.history.replaceState({ s7: 0 }, ""); G.history.pushState({ s7: 1 }, "");
@@ -180,5 +217,5 @@
   Object.assign(G, H.globals);
   G.S7HOST = H;
   if (G.__S7_NOSTORE) G.addEventListener("load", () => dialog({ title: "บันทึกดวงไม่ได้", message: "เบราว์เซอร์นี้ไม่ให้เก็บข้อมูล (เช่นโหมดไม่ระบุตัวตน) ดวงที่บันทึกจะหายเมื่อปิดหน้า", actions: ["ตกลง"], cancel: null }));
-  if ("serviceWorker" in G.navigator && /^https?:$/.test(G.location.protocol)) G.addEventListener("load", () => { G.navigator.serviceWorker.register("sw.js").catch(() => {}); });
+  if ("serviceWorker" in G.navigator && /^https?:$/.test(G.location.protocol)) G.addEventListener("load", () => { G.navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {}); });
 })(typeof window !== "undefined" ? window : globalThis);
