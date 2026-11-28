@@ -1,6 +1,7 @@
 // ╔══════════════════════════════════════════════════════════════════════════╗
 // ║  Satta7 · สัตตเลขชาตา — ดูดวงเลข ๗ ตัว ๙ ฐาน จากวันเดือนปีเกิด (Scriptable) ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
+// v5.2.7: รวมคะแนนตัวตนและสรุปภพ–ดาว · จัดกลุ่มตำรารอง · ขนาดอักษร ๓ ระดับ
 // v5.2.6 (๒๘ พ.ย. ๒๕๖๙): หน้าแรกเรียงแนวตั้ง · ตำรารองแสดงเฉพาะคำอ่านที่ตรงผัง · เพิ่มคำอ่านคู่ธาตุและคู่สมพล
 // v3.9.51 รอบ 99 (ไม่เปลี่ยนเลขรุ่น): ตำรารองเล่ม ๙ (S9) ในกล่องอ่านช่องเลขบนผัง และการ์ดมุมมองตำรารองเล่ม ๙ ในหมวดรายเรื่อง (ข้อตัดสิน 145)
 // v3.9.51 รอบ 98 (ไม่เปลี่ยนเลขรุ่น): ผังจำลองเพิ่มวันจร ยามจร · ปุ่ม 📤 แชร์สรุป (ShareSheet · ข้อตัดสิน 144 · UX_PLAN ข้อ 8)
@@ -41,7 +42,7 @@
 // • ไม่มีชั้นจร ไม่มียาม ไม่มีดาวเจ้ายาม
 //
 // ที่มาข้อมูล: ตำรา "เลข ๗ ตัว ๙ ฐานประยุกต์" ภาค ๑ และ ภาค ๒ · ปฏิทินจันทรคติในตัวจาก yam7 v7.3+
-const VERSION = "5.2.6";
+const VERSION = "5.2.7";
 const BUILD = "๒๘ พ.ย. ๒๕๖๙";   // วันที่ปรับปรุงล่าสุด (ค.ศ. 2026-11-28)
 const APP = "Satta7 · สัตตเลขชาตา";
 const APPV = "\u2063Satta7\u2063 · สัตตเลขชาตา";   // v2.4.1 ชื่อแอปในเนื้อหน้า: กันตัวแปลงเลขไทยเปลี่ยน 7 เป็น ๗
@@ -378,10 +379,10 @@ const s9Star = n => `ดาว${P[n].n} (${TH(n)})`;
 const S9_FOOT = `<div class="pe">มุมมองตำรารอง · ไม่คิดคะแนน · คะแนนหลักยึดตำราหลัก</div>`;
 // Same chart-specific readings on the tabs and in the chart popovers. Filter again by the selected cell.
 function s9Pane(ch, scope) {
-  const groups = s9EvalAll(ch).matched.map(({ c, lines }) => s9RenderItem(c, lines.filter(x =>
+  const groups = s9Sections(s9EvalAll(ch).matched.map(({ c, lines }) => ({ c, lines: lines.filter(x =>
     scope.sum ? x.sumCol === scope.col : x.cells.some(([k, h, col]) => k === scope.k && (h === scope.h || col === scope.col))
-  ))).filter(Boolean);
-  return groups.length ? `<!--s9--><details class="s9"><summary>📗 ตำรารองเล่ม ๙ · คำอ่านที่ตรงผัง</summary><div class="s9h">${esc(scope.label)}</div>${groups.join("")}${S9_FOOT}</details><!--/s9-->` : "";
+  ) })).filter(x => x.lines.length));
+  return groups ? `<!--s9--><details class="s9"><summary>📗 ตำรารองเล่ม ๙ · คำอ่านที่ตรงผัง</summary><div class="s9h">${esc(scope.label)}</div>${groups}${S9_FOOT}</details><!--/s9-->` : "";
 }
 const s9Put = (h, x) => (x ? h.replace(/<div class="px">(?![\s\S]*<div class="px">)/, `${x}\n<div class="px">`) : h);   // ใต้คำอธิบาย เหนือปุ่มท้ายกล่อง
 const S9_ROWL = { day: "ฐาน ๑ วัน", month: "ฐาน ๒ เดือน", year: "ฐาน ๓ ปี", sum: "ฐาน ๔ ฐานรวม", b5: "ฐาน ๕", b6: "ฐาน ๖", b7: "ฐาน ๗", b8: "ฐาน ๘", b9: "ฐาน ๙" };
@@ -436,6 +437,22 @@ const S9_OUTCOME = {
   "S9-P3-118": "คู่อาจช่วยให้เกิดผลประโยชน์หรืออำนวยความสะดวกในเรื่องที่เกี่ยวข้อง"
 };
 const S9_SUPPORT = { "S9-P3-057": [null, 11], "S9-P3-061": [1, 10], "S9-P3-112": [4, 12] };
+// Readings edited against S9 EP11, EP15–16 and the P3 house-relationship table.
+const s9TasiText = (c, dest, n, t) => {
+  const h = dest.h;
+  if (c.id === "S9-P3-032" && h === "หินะ") return "เรื่องคนในบ้านอาจกลายเป็นภาระที่ต้องเข้าไปช่วยดูแลหรือจัดการ";
+  if (c.id === "S9-P3-032" && ["อัตตะ", "ตนุ"].includes(h)) return "ให้ความสำคัญกับครอบครัว คนรัก หรือคนที่อยู่ร่วมบ้าน และมักผูกพันกับคนเหล่านี้";
+  if (c.id === "S9-P3-036" && n === 1 && h === "ทาสี") return "คนใกล้ชิดหรือคนในบ้านอาจมีความมั่นใจและรับบทนำได้ อีกด้านหนึ่ง ความใจร้อนอาจทำให้เรื่องในบ้านตึงเครียด ขึ้นอยู่กับฐานรองรับ";
+  if (c.id === "S9-P3-065" && h === "ทาสี") return "มักลงมือช่วยหรือรับผิดชอบเรื่องต่าง ๆ เพื่อคนในครอบครัว";
+  if (c.id === "S9-P3-066" && h === "ทาสี") return "อุปสรรคอาจมาในรูปภาระจากคนใกล้ตัวหรือเรื่องในครอบครัวที่ต้องช่วยจัดการ";
+  return t;
+};
+const S9_PAIR_PLAIN = {
+  "1-7": { type: "คู่ธาตุไฟ", result: "มีแนวโน้มแน่วแน่และรักษาเกียรติ แต่ถ้ายึดความเห็นของตัวเองมาก ความขัดแย้งอาจยืดเยื้อ", why: "อาทิตย์เปรียบเหมือนไฟที่ให้แสง สื่อถึงความโดดเด่นและศักดิ์ศรี ส่วนเสาร์เปรียบเหมือนไฟสุมที่ร้อนนาน สื่อถึงความอดทนและความหนักแน่น" },
+  "2-5": { type: "คู่ธาตุดิน", result: "ผสานความอ่อนโยนกับความหนักแน่น แต่เมื่อดาวดวงใดอยู่ในตำแหน่งเสีย ความหวังดีอาจกลายเป็นความเห็นต่าง", why: "จันทร์เปรียบเหมือนดินอ่อน ส่วนพฤหัสบดีเปรียบเหมือนดินแข็ง ตำรารองยังจัดคู่นี้เป็นคู่ศัตรูในอีกมุมหนึ่ง จึงไม่ควรตัดสินจากชื่อคู่เพียงอย่างเดียว" },
+  "3-8": { type: "คู่ธาตุลม", result: "ตอบสนองไวและปรับตัวเก่ง แต่ควรระวังใจร้อนหรือเปลี่ยนใจเร็ว", why: "อังคารเร่งให้ลงมือ ส่วนราหูเพิ่มแรงและความพลิกแพลง" },
+  "4-6": { type: "คู่ธาตุน้ำ", result: "ปรับตัวและสื่อสารได้ละมุน แต่เมื่อตำแหน่งดาวเสีย คำพูดอาจกลายเป็นจุดสะดุด", why: "พุธเด่นด้านการพูดและการค้า ส่วนศุกร์เติมความละเอียดอ่อน รสนิยม และศิลปะ" }
+};
 const s9Cache = new WeakMap();
 function s9Test(ch, c) {
   const R = ch.rows, B = ch.B, HX = HSX(ch);
@@ -488,8 +505,10 @@ function s9Readings(ch, c, r) {
   if (r.pr) return r.pr.flatMap(p => r.loc[p].map(({ k, h, col, a, b, pk, sumCol }) => {
     const note = (S9_PAIR_NOTES[c.id] || {})[p], extra = S9_PAIR_GUIDE[c.id] && S6B.pp.pg[p];
     const text = note || (c.pseg && c.pseg[p]);
-    const loc = pk === "sum" ? `โดยมี${s9Star(b)}เป็นดาวเจ้ากำลังฐานรองรับ ๑๒` : `สัมพันธ์กับ${s9Star(b)}บน${S9_ROWL[pk]} หลัก ${TH(col + 1)}`;
-    return { lead: `${s9Star(a)} ในภพ ${h} ${loc} ส่งผลให้`, text: text && secThai(text), cells: [[k,h,col]], sumCol, extra };
+    const loc = pk === "sum" ? `โดยมี${s9Star(b)}เป็นดาวเจ้ากำลังฐานรองรับ ๑๒` : `สัมพันธ์กับ${s9Star(b)} บน${S9_ROWL[pk]} หลัก ${TH(col + 1)}`;
+    const pos = `${s9Star(a)} ในภพ${h} ${loc}`;
+    return { lead: `${pos} ส่งผลให้`, pos, pair: p, plain: c.id === "S9-P3-002" ? S9_PAIR_PLAIN[p] : null,
+      text: text && secThai(text), cells: [[k,h,col]], sumCol, extra, n: a, other: b };
   })).filter(x => x.text);
   return r.positions.flatMap(({ n, src, links, sp }) => {
     const dest = links[0], matches = a => a.some(([k,h]) => k === dest.k && (h == null || h === dest.h));
@@ -505,18 +524,39 @@ function s9Readings(ch, c, r) {
       : links.length > 1 ? `${s9Star(n)} เชื่อมภพ ${rest} ส่งผลให้`
       : is89(dest.k) ? `ภพ ${dest.h} มี${s9Star(n)}บน${S9_ROWL[dest.k]} ส่งผลให้`
       : `${s9Star(n)} ในภพ ${dest.h} ส่งผลให้`;
-    return [{ lead, text: s9DisplayText(text), cells: (src ? [src,...links] : links).map(x => [x.k,x.h,x.c]), sumCol: sp ? sp.col : undefined }];
+    return [{ lead, text: s9DisplayText(s9TasiText(c, dest, n, text)), n, cells: (src ? [src,...links] : links).map(x => [x.k,x.h,x.c]), sumCol: sp ? sp.col : undefined }];
   });
 }
-function s9RenderItem(c, lines) {
-  const e = S9E.e[c.id], notes = new Map(), guide = S9_PAIR_GUIDE[c.id];
-  if (!lines.length) return "";
-  const body = lines.map(x => {
-    if (x.extra) notes.set(x.extra.t, x.extra);
-    return secReading(x.lead, x.text, [c.id], S9_LB[e.l]);
+const s9Rank = c => c.t === "pair" ? 2 : ["pin", "chon"].includes(c.t) ? 0 : 1;
+const S9_SECTION = ["ดาวในภพ", "ดาวและภพสัมพันธ์", "คู่ดาว"];
+function s9Sections(items) {
+  return S9_SECTION.map((label, i) => {
+    const h = items.filter(x => s9Rank(x.c) === i).map(x => s9RenderItem(x.c, x.lines)).join("");
+    return h ? `<section class="s9-section" data-s9-kind="${i}"><h3>${label}</h3>${h}</section>` : "";
   }).join("");
-  const extra = [...notes.values()].map(x => secReading("มุมมองสัตตาภิธรรม", s9Unlabel(x.t), x.s)).join("");
-  return `<div class="kv s9c">${body}${extra}${guide ? secReading("หลักรวม", guide[0], [c.id, guide[1]]) : ""}</div>`;
+}
+function s9RenderItem(c, lines) {
+  const e = S9E.e[c.id], guide = S9_PAIR_GUIDE[c.id];
+  if (!lines.length) return "";
+  const groups = new Map(), badge = S9_LB[e.l];
+  lines.forEach(x => {
+    // Pair direction and coordinates are evidence, not separate predictions. Non-pairs dedupe exact statements only.
+    const key = x.pair ? `pair:${x.pair}` : `${x.lead}\u0000${x.text}`;
+    const g = groups.get(key) || { ...x, positions: new Set() };
+    if (x.pos) g.positions.add(x.pos);
+    groups.set(key, g);
+  });
+  const body = [...groups.values()].map(x => {
+    if (!x.pair) return secReading(x.lead, x.text, [c.id], badge);
+    const [main, ...also] = [...x.positions];
+    const lead = x.plain ? `${main} เป็น${x.plain.type}` : main;
+    const text = x.plain ? `จึง${x.plain.result}` : x.text;
+    const why = x.plain ? `<div class="s9-why"><b>เหตุผล:</b> ${esc(x.plain.why)}</div>` : "";
+    const pos = also.length ? `<details class="s9-other"><summary>พบคู่นี้อีก ${TH(also.length)} ตำแหน่ง</summary><ul>${also.map(p => `<li>${esc(p)}</li>`).join("")}</ul></details>` : "";
+    const extra = x.extra ? secReading("มุมมองสัตตาภิธรรม", s9Unlabel(x.extra.t), x.extra.s) : "";
+    return `<article class="s9-pair">${secReading(lead, text, [c.id], badge)}${why}${extra}${pos}</article>`;
+  }).join("");
+  return `<div class="kv s9c">${body}${guide ? secReading("หลักรวม", guide[0], [c.id, guide[1]]) : ""}</div>`;
 }
 function s9GrpOf(c) {
   if (c.t === "pair") return "self";
@@ -549,7 +589,7 @@ function s9NatCard(ch) {
   matched.forEach(x => { const g = x.grp || "self"; (byGrp[g] = byGrp[g] || []).push(x); });
   const chips = S9_GRP.filter(([g]) => byGrp[g] && byGrp[g].length)
     .map(([g, lab]) => `${lab} (${TH(byGrp[g].length)})`).join(" · ");
-  const selfItems = (byGrp.self || []).slice(0, 4).map(x => s9RenderItem(x.c, x.lines)).join("");
+  const selfItems = s9Sections((byGrp.self || []).slice(0, 4));
   const s7Items = sec.s7.slice(0, 6).map(id => s7Line(ch, id)).filter(Boolean).join("");
   return `<!--s9-nat--><div class="card"><h2>📗 มุมมองตำรารองในพื้นดวง <span>ไม่คิดคะแนน · คะแนนหลักยึดตำราหลัก</span></h2>
 <div class="kv sub" style="font-size:12.5px">ตรวจพบ <b>${TH(sec.total)}</b> ข้อที่ตรงกับผังนี้จากชุดตำรารองทั้งหมด${chips ? ` · แยกตามหมวดเด่น: ${esc(chips)}` : ""}</div>
@@ -1273,6 +1313,8 @@ input.kn-r{display:none !important;width:0;height:0;margin:0;padding:0;border:0}
 .kn-tpan .sub{display:block;font-size:12px;color:var(--tx3);margin-top:4px;margin-bottom:0}
 .kn-tpan h3,.kn-stlist h3{margin:0 0 3px;font-size:14px}
 body.big .kn-hsum{font-size:16.5px}body.big .kn-dv{font-size:15.5px}body.big .kn-tpr{font-size:14.5px}body.big .kn-stx,body.big .kn-tpan{font-size:15.5px}
+.s9-section{margin:10px 0}.s9-section h3{margin:0 0 5px;font-size:15px;color:var(--acc)}.s9-pair{padding:7px 0;border-bottom:1px solid var(--line)}.s9-why,.s9-other{margin:4px 0 0 8px;color:var(--sub);font-size:13px}.s9-other ul{padding-inline-start:20px;margin-top:3px}
+.kn-signals{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:8px}.kn-sig-col{min-width:0;background:var(--tile);border:1px solid var(--line);border-radius:11px;padding:8px 10px}.kn-sig-col h3,.kn-sig-col h4{margin:3px 0 5px}.kn-sig-col h4{color:var(--tx);border-top:1px solid var(--line);padding-top:5px;font-size:13.5px}.kn-sig-col ul{list-style:none;padding:0;margin:0}.kn-sig-col li,.kn-sig-star{padding:4px 0;border-bottom:1px solid var(--line)}.kn-sig-col li:last-child,.kn-sig-star:last-child{border-bottom:0}.kn-sig-label{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px;color:var(--tx)}.kn-sig-label small,.kn-sig-text{color:var(--sub);font-size:13px;line-height:1.55}.kn-sig-star summary{color:var(--tx);cursor:pointer;font-size:14px}.kn-sig-star .chip{display:inline-block;margin-top:5px}.kn-sig-mid{margin-top:5px}.kn-sig-text.sub{margin:4px 0}body.big .kn-sig-text,body.big .s9-why,body.big .s9-other{font-size:15px}
 /* ---- v5.3.0 เฟส B: แท็บดวงจร s3 (ไทม์ไลน์ ๓ จังหวะ · Mini Heatmap ๔×๓ · ป้ายตรงตำรารอง) ---- */
 .tr-tl3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 11px}
 a.tr-tlc,.tr-tlc{display:block;text-decoration:none;color:var(--tx);background:var(--tile);border:1px solid var(--line);border-top:3px solid var(--mid);border-radius:12px;padding:8px 8px 7px;min-width:0}
@@ -1353,7 +1395,14 @@ body.big .ans,body.big .s7,body.big .arow{font-size:15.5px}body.big .s7h{font-si
 .stl{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-top:8px}.stl a{display:block;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--tx);background:var(--card);font-size:12.5px;line-height:1.45}
 .stl a.now{border:2px solid var(--acc)}.stl a.no{color:var(--tx3);background:transparent}.stl a b{display:block;font-size:13px}.stl .pill{margin-left:0;font-size:12px;padding:1px 7px}
 `;
-const bigOn = () => { try { return !!stateGet().big; } catch (e) { return false; } };
+const FONT_MODES = [["small", "เล็ก"], ["normal", "ปกติ"], ["large", "ใหญ่"]];
+const fontMode = st => FONT_MODES.some(([k]) => k === st.font) ? st.font : st.big ? "large" : "normal";
+const fontOn = () => { try { return fontMode(stateGet()); } catch (e) { return "normal"; } };
+const bigOn = () => fontOn() === "large";
+const fontPick = m => { if (FONT_MODES.some(([k]) => k === m)) writeJSON(F_STATE, { ...stateGet(), font: m, big: m === "large" }); };
+const fontSelect = () => `<span class="font-select" role="group" aria-label="ขนาดตัวอักษร">${FONT_MODES.map(([m, lab]) => `<a href="satta7://fs?m=${m}" class="font-${m}" title="${lab}" aria-label="ขนาดตัวอักษร${lab}"${m === fontOn() ? ' aria-current="true"' : ""}>ก</a>`).join("")}</span>`;
+const fontCSS = css => fontOn() === "small" ? css.replace(/(font-size\s*:\s*)(\d+(?:\.\d+)?)px/g, (_, p, n) => p + Math.round(+n * 9) / 10 + "px") : css;
+
 const themeOn = () => { try { const t = stateGet().theme; return t === "dark" || t === "light" ? t : ""; } catch (e) { return ""; } };   // รอบ 82: "" = ตามระบบ
 const themeCls = () => ({ dark: "dk", light: "lt" })[themeOn()] || "";   // v1.1.0 โหมดตัวอักษรใหญ่
 // v2.0 แปลงตารางกว้างทุกใบเป็นแถวซ้อน (คอลัมน์แรกเป็นหัวแถว ที่เหลือเป็น "หัวคอลัมน์: ค่า") หรือเป็นช่อง
@@ -1381,7 +1430,7 @@ const TOTOP_HTML = `<a class="totop" id="s7top" href="satta7://top" title="ก�
 const TOTOP_JS = `;(function(){var b=document.getElementById("s7top");if(!b)return;var f=function(){var y=window.pageYOffset||document.documentElement.scrollTop||0,on=y>(window.innerHeight||600);if(on!==(b.className.indexOf(" on")>0))b.className="totop"+(on?" on":"");};window.addEventListener("scroll",f,{passive:true});f();})();`;
 const page = (title, body, script, bar) => thaiHTML(`<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, shrink-to-fit=no, viewport-fit=cover">
-<title>${esc(title)}</title><style>${CSS}${BAR_PIN && bar ? BAR_PIN_CSS : ""}${TOTOP_CSS}</style></head><body class="${[bigOn() ? "big" : "", themeCls(), BAR_PIN && bar ? "pin" : ""].filter(Boolean).join(" ")}"><div class="wrap">${tbFlat(body)}${bar ? bar.replace('<div class="bar">', '<div class="bar bot">') : ""}</div>${TOTOP_HTML}<script>${script || "/*หน้านี้ไม่มีสคริปต์*/"}${TOTOP_JS}</script></body></html>`);
+<title>${esc(title)}</title><style>${fontCSS(CSS)}${BAR_PIN && bar ? BAR_PIN_CSS : ""}${TOTOP_CSS}</style></head><body class="${[bigOn() ? "big" : "", themeCls(), BAR_PIN && bar ? "pin" : ""].filter(Boolean).join(" ")}"><div class="wrap">${tbFlat(body)}${bar ? bar.replace('<div class="bar">', '<div class="bar bot">') : ""}</div>${TOTOP_HTML}<script>${script || "/*หน้านี้ไม่มีสคริปต์*/"}${TOTOP_JS}</script></body></html>`);
 // แปลงเลขอาหรับเป็นเลขไทยในชิ้นส่วน HTML (ใช้กับข้อความที่ฝังในสคริปต์ ซึ่ง thaiHTML ไม่แตะ)
 const thaiFrag = h => String(h).replace(/>([^<]+)</g, (m, t) => ">" + thaiNum(t) + "<");
 // แถบปุ่มติดขอบล่าง (ทุกหน้าหลัก) — ไม่ต้องเลื่อนไปท้ายหน้าเพื่อกดปุ่ม
@@ -1724,22 +1773,26 @@ function scPill(sc, h, k) {
   const [w, c] = bad ? BADV(sc.score) : [sc.word, SC_CLS[sc.lv]];
   return `<span class="pill ${c}">${mkS(w)}${TH(sc.score)} ${esc(w)}</span>`;
 }
-function overviewCard(ch, rd) {
-  const sf = rd.self;
-  // v2.0 แถวชื่อซ้าย ป้ายขวา — ป้ายคะแนนไม่ตกบรรทัดกลางประโยคอีก
-  const li = (x, warn) => `<div class="lr"><div class="lx"><b>${esc(x.h)}</b>${x.also && x.also.length ? ` <span class="pk">+ ${esc(x.also.join(" "))}</span>` : ""}<div class="lm2">${esc(shortMean(x.h, x.key) || x.mean)}${warn ? ` — ${esc(rd.warnWhy(x))}` : ""}</div></div>${scPill(x.sc, x.h, x.key)}</div>`;
-  const tile = (lab, sc, h, k) => { const [w, c] = [sc.word, SC_CLS[sc.lv]]; return `<div class="stt"><small>${lab}</small><b>${TH(sc.score)}</b><em class="${c}">${mkW(w)}</em></div>`; };
-  return `<div class="card"><h2>ภาพรวมพื้นดวง <span>คะแนนตัวเจ้าชะตา เต็ม ๒๐๐ (ภาค ๒ หน้า ๑๘๒–๑๘๓)</span></h2>
-<div class="tot"><b>${TH(sf.total)}</b><i>/ ๒๐๐ · ${mkW(sf.word)}</i></div>
-<div class="st2">${tile("อัตตะ · วันเกิด", sf.atta.sc, "อัตตะ", "day")}${tile("ตนุ · เดือนเกิด", sf.tanu.sc, "ตนุ", "month")}</div>
-<div class="hr"><div class="hn">เด่น</div>${rd.top.length ? rd.top.map(x => li(x, false)).join("") : `<div class="hl">ไม่มีเรือนที่ถึงระดับดีในฐาน ๑–๓</div>`}</div>
-<div class="hr"><div class="hn">ระวัง</div>${rd.warn.length ? rd.warn.map(x => li(x, true)).join("") : `<div class="hl">ไม่มีเรือนที่ต้องระวังเป็นพิเศษ</div>`}</div>
-<details><summary>คะแนนนี้คิดอย่างไร</summary><div class="foot">
-คะแนนเป็นของ<b>เลขที่ตั้งเรือน</b> ไม่ใช่ของชื่อเรือน ตามวิธีในตำรา ภาค ๒ หน้า ๑๘๒: ดูเลข → ตามเลขเดียวกันไปทุกฐาน → ดูฐานรองรับ → ดูการชนเสีย<br>
-ตั้งต้นจากกลุ่มฐานรองรับ (ดี ๑๐๐ · ปานกลาง ๗๘ · ฐานบาปเคราะห์อ่อน ๔ ๘ ๑๒ = ๗๒ · ฐานบาปเคราะห์ ๓ ๗ ๑๐ ๒๐ = ๖๒) แล้วปรับด้วย เลขศุภ/บาปเคราะห์บนฐานเสีย ±๔ · ชนเสีย −๒๐ และ −๑๐ ต่อเรือนถัดไป (ฐานดีช่วยเหลือ ๒๐% จากหนักเป็นเบา หน้า ๑๙๕) · ชนภพเสียน้อย −๔ · มหาอุปถัมภ์ +๘ · ดาวกับเจ้าของฐานเป็นพวกกัน +๖ เป็นศัตรู −๘ (หน้า ๑๙๓) · ฐาน ๑๒ ราหู −๒ ถึง −๕ · มัชฌิมาทอนเข้าหากลาง ๓๐% · ฐาน ๘ ๙ เรือนดีหนุน +๒ ถึง +๔ เมื่อไม่ชนเสีย<br>
-สอบเทียบกับตัวเลขที่ตำราให้: ตัวอย่าง ๑ อัตตะ ๕๐–๖๐ · ตนุ เต็มร้อย · รวม ๑๔๐–๑๖๐ (หน้า ๑๘๒–๑๘๓) · ตัวอย่าง ๒ อัตตะ ๗๐ ตนุ ๗๐ (หน้า ๑๘๗–๑๘๘) — แอปได้ ๕๓ / ๙๖ / ๑๔๙ และ ๗๐ / ๖๐<br>
-ระดับคำตัดสิน: ดี ≥ ๘๘ · ค่อนดี ๗๕–๘๗ · กลาง ๖๐–๗๔ · ค่อนร้าย ๔๕–๕๙ · ร้าย &lt; ๔๕ · "ระวัง" รวมสองแบบคือเรือนเสียที่เลขหนักแน่น และเรือนดีที่เลขอ่อน
-</div></details></div>`;
+function selfScoreTiles(sf) {
+  const tile = (lab, sc) => `<div class="stt"><small>${lab}</small><b>${TH(sc.score)}</b><em class="${SC_CLS[sc.lv]}">${mkW(sc.word)}</em></div>`;
+  return `<div class="st2" id="kn-self-score">${tile("อัตตะ · วันเกิด", sf.atta.sc)}${tile("ตนุ · เดือนเกิด", sf.tanu.sc)}</div>`;
+}
+function knowSignals(ch, rd, S) {
+  const hi = S.list.filter(x => x.lv > 0), lo = S.list.filter(x => x.lv < 0), mid = S.list.filter(x => !x.lv);
+  const matched = s9EvalAll(ch).matched;
+  const house = (x, warn) => `<li><div class="kn-sig-label"><span><b>${esc(x.h)}</b>${x.also?.length ? ` <small>+ ${esc(x.also.join(" · "))}</small>` : ""}</span>${scPill(x.sc, x.h, x.key)}</div><div class="kn-sig-text">${esc(shortMean(x.h, x.key) || x.mean)}${warn ? ` — ${esc(rd.warnWhy(x))}` : ""}</div></li>`;
+  const star = x => {
+    const cl = x.lv > 0 ? "g" : x.lv < 0 ? "b" : "";
+    const extra = matched.filter(q => s9Rank(q.c) === 0).flatMap(q => q.lines.filter(y => y.n === x.n).map(y => [y,q.c.id]))[0];
+    const support = starX(x);
+    return `<details class="kn-sig-star"><summary><b>${TH(x.n)} ${esc(P[x.n].n)}</b><span class="pill ${cl}">${esc(starTag(x))}</span></summary>
+<div class="kn-sig-text">${esc(x.trait)}</div><div class="kn-sig-text">${esc(x.why.join(" · "))}</div>
+${support ? `<div class="kn-sig-text"><b>ฐาน${esc(support.name)}</b> ${esc(support.txt)}</div>` : ""}
+${extra ? `<div class="kn-sig-text"><b>เสริม · ไม่คิดคะแนน</b> ${esc(extra[0].lead)} ${esc(extra[0].text)} ${refTag(extra[1])}</div>` : ""}
+<span class="chip ${cl}"${hlA("st" + x.n, starHL(ch, x))}>ดูดาวนี้บนผัง</span></details>`;
+  };
+  const column = (key, cls, lab, houses, stars) => `<section class="kn-sig-col ${cls}" id="kn-stars-${key}"><h3>${lab}</h3><h4>ภพ</h4>${houses.length ? `<ul>${houses.map(x => house(x, cls === "b")).join("")}</ul>` : `<p class="kn-sig-text">ไม่มีภพที่เข้าเกณฑ์</p>`}<h4>ดาว</h4>${stars.length ? stars.map(star).join("") : `<p class="kn-sig-text">ไม่มีดาวที่เข้าเกณฑ์</p>`}</section>`;
+  return `<section id="kn-signals"><div class="kn-sec"><span>ภพและดาว · เด่น / ต้องระวัง</span></div><div class="kn-signals">${column("strong", "g", "▲ เด่น", rd.top, hi)}${column("weak", "b", "▼ ต้องระวัง", rd.warn, lo)}</div>${mid.length ? `<details class="kn-sig-mid"><summary>ดาวระดับกลางและเฉย (${TH(mid.length)})</summary>${mid.map(star).join("")}</details>` : ""}<div class="kn-sig-text sub">คะแนนภพและอันดับดาวมาจากตำราหลัก คำอ่านเสริมแสดงเฉพาะที่ตรงผัง</div></section>`;
 }
 // v3.9.18 คำอ่านคู่เรือนที่ข้อความตรงกัน (เช่น ทาสีกับทาสาฐาน ๘ หรืออัตตะกับอัตตะฐาน ๙) แสดงบรรทัดเดียว
 function relLines(rel) {
@@ -4054,7 +4107,7 @@ const KN_SUM = { 2: "ตัวตนมั่นคง", 1: "ตัวตนค�
 const KN_LV = { 2: "ออกมาชัดทางดี", 1: "ไปทางดี", 0: "ออกทั้งสองด้าน", "-1": "ด้านดีออกไม่เต็มที่", "-2": "ด้านดีออกยาก ด้านเสียเด่นกว่า" };
 function knowCard(ch, rd, tt) {
   const pk = pakRead(ch);
-  const S = starsOf(ch), hi = S.list.filter(x => x.lv > 0), lo = S.list.filter(x => x.lv < 0), sf = rd.self;
+  const S = starsOf(ch), sf = rd.self;
   const used = new Set();
   const fresh = (t, max) => { const out = [];
     String(t || "").split(/\s+/).filter(Boolean).forEach(w => { const k = w.replace(/[,·]/g, ""), big = k.length >= 5;
@@ -4076,15 +4129,15 @@ function knowCard(ch, rd, tt) {
     sumLine = `${esc(KN_SUM[sf.lv])} · เรื่องเด่นคือ${top.slice(0, 2).map(x => " " + nm(x)).join(" และ")} · ควรระวังเรื่อง${low[0] ? " " + nm(low[0]) : "ทั่วไป"}`;
   }
   const heroH = `<div class="kn-hero${lvCls ? " " + lvCls : ""}">
-<div class="kn-htxt"><div class="kn-hlb">ภาพรวมดวงชะตา</div><div class="kn-hsum">${sumLine}</div><div class="kn-hsub">✎ สรุปจากการ์ดด้านล่าง · ไม่คิดคะแนน</div></div>
+<div class="kn-htxt"><div class="kn-hlb">ภาพรวมดวงชะตา</div><div class="kn-hsum">${sumLine}</div><div class="kn-hsub">คะแนนตัวเจ้าชะตา = อัตตะ + ตนุ</div></div>
 <div class="kn-gauge"><div class="kn-gnum">${TH(sf.total)}<small>/${TH(200)}</small></div><div class="kn-gw${lvCls ? " " + lvCls : ""}">${esc(sf.word)}</div><div class="kn-gbar${lvCls ? " " + lvCls : ""}"><i style="width:${pct}%"></i></div></div>
-</div>`;
+</div>${selfScoreTiles(sf)}`;
 
   // ตัวตน (อัตตะ+ตนุ + เพศดาว) คง hlWrap แตะดูบนผังได้เหมือนเดิม
   const sx = sexRead(ch.rows, (ch.p && ch.p.sex) || ""), sxT = sx.txt.split("→").slice(1).join("→").trim();
   const selfH = hlWrap("kn-self",
     { f: [cid("day", 0), cid("month", 0)], p: [], b: [], pc: [], s: [sf.atta.sc.sup && cid("sum", sf.atta.sc.sup.col), sf.tanu.sc.sup && cid("sum", sf.tanu.sc.sup.col)].filter(Boolean),
-      t: `<b>ตัวตน = อัตตะ ${TH(a)} · ตนุ ${TH(t)}</b> · ${TH(sf.total)}/${TH(200)} ${esc(sf.word)}` },
+      t: `<b>ตัวตน = อัตตะ ${TH(a)} · ตนุ ${TH(t)}</b>` },
     `<div class="kv"><b>ตัวตน</b> ${esc(KN_SELF[sf.lv])} ✎${sxT ? ` · ${esc(fresh(sxT.replace(/✎/g, "")))}` : ""} <span class="sub">(อัตตะ ${TH(a)} ${esc(P[a].n)} · ตนุ ${TH(t)} ${esc(P[t].n)})</span></div>`);
 
   // 2–3) ตัด ปาก–ใจ–ที่นั่ง ที่ซ้ำออก แทนด้วยแถบสรุป ๓ มิติ
@@ -4116,17 +4169,7 @@ function knowCard(ch, rd, tt) {
 </div>`;
   }
 
-  // 5) ดาวเด่นต่อด้วยดาวอ่อน · คง hlA สำหรับไฮไลต์ผัง
-  const stCard = (x, side) => {
-    const isG = side === 0, tx = fresh(PSTRONG[x.n][side], 6) || PSTRONG[x.n][side] || "";
-    const chip = `<span class="chip ${isG ? "g" : "b"}"${hlA("st" + x.n, starHL(ch, x))}>${TH(x.n)} ${esc(P[x.n].n)}</span>`;
-    return `<div class="kn-stc ${isG ? "is-g" : "is-b"}"><div class="kn-sth">${chip}<span class="kn-stlv">${esc(KN_STAR[x.k] || "")}</span></div><div class="kn-stx">${esc(tx)}</div></div>`;
-  };
-  const hiCards = hi.length ? hi.map(x => stCard(x, 0)).join("") : `<div class="kn-empty is-g">ไม่มีดาวที่ถึงเกณฑ์ดาวเด่น ลักษณะดีของดาวออกมาไม่ชัด</div>`;
-  const loCards = lo.length ? lo.map(x => stCard(x, 1)).join("") : `<div class="kn-empty is-b">ไม่มีดาวอ่อนในผังนี้</div>`;
-  const starSecH = `<div class="kn-sec"><span>ดาวเด่น · ดาวอ่อน</span><span class="sub" style="margin:0;font-size:11.5px">แตะชื่อดาวเพื่อไฮไลต์ผัง</span></div>
-<section class="kn-stlist" id="kn-stars-strong"><h3>★ ดาวเด่น (${TH(hi.length)})</h3>${hiCards}</section>
-<section class="kn-stlist" id="kn-stars-weak"><h3>▼ ดาวอ่อน (${TH(lo.length)})</h3>${loCards}</section>`;
+  const starSecH = knowSignals(ch, rd, S);
 
   // 6) วันเกิด · ยามเกิด · ดิถีเกิด แสดงต่อกัน แม้ข้อมูลไม่ครบ
   const pd = ch.lunar && !ch.synth ? [`วัน${DAYS[ch.dayIdx]}`, PD_DAY[ch.dayIdx]] : null, Y = yamRead(ch);
@@ -4154,7 +4197,7 @@ ${refIndexBox()}
 ภาพรวมดวงชะตาและตัวตน = คะแนนอัตตะ + ตนุ เต็ม ๒๐๐ (ภาค ๒ หน้า ๑๘๒–๑๘๓) กับเพศดาวของอัตตะ ตนุ (ภาค ๑ หน้า ๓๙–๔๐) · ประโยคระดับตัวตนแอปเรียบเรียงเอง ✎<br>
 แถบสรุป ๓ มิติ = ชั่งน้ำหนักปาก–ใจ–ที่นั่ง (รายละเอียดเต็มอยู่ในการ์ดตัวเจ้าชะตาด้านล่าง) · ระดับพื้นดวง สูง/กลาง/ต่ำ [B:น.๕๑–๕๔] · และจำนวนข้อที่ตรงผังจากมุมมองตำรารอง (ไม่คิดคะแนน)<br>
 เรื่องเด่น เรื่องที่ต้องระวัง = ๓ เรื่องคะแนนสูงสุดและ ๓ เรื่องต่ำสุดจาก ๒๘ เรื่องของดวงนี้ (เรือนของเรื่อง ภาค ๑ หน้า ๑๑๓–๑๑๕ · สูตรคะแนน ภาค ๒ หน้า ๑๘๒–๑๙๖) เรื่องที่มีแต่เรือนเสียไม่นับเป็นเรื่องเด่น<br>
-ดาวเด่น ดาวอ่อน = ข้อเด่น ข้อเสียของดาว (ภาค ๑ หน้า ๓๕–๓๗) ยกมาไม่เกิน ๖ วลีต่อดาว · แตะชื่อดาวเพื่อไฮไลต์ตำแหน่งบนผัง ๙ ฐาน<br>
+ภพเด่นและควรระวังมาจากคะแนนรายภพ (ภาค ๒ หน้า ๑๘๒–๑๙๕) แยกจากอันดับเรื่อง · อันดับและลักษณะดาว (ภาค ๑ หน้า ๓๕–๓๗, ๑๒๙–๑๓๒) · เปิดแถวดาวแล้วเลือกดูตำแหน่งบนผังได้<br>
 ตามวันเกิด (ภาค ๑ หน้า ๗๖–๘๗) · ตามยามเกิด (ภาค ๑ หน้า ๘๘–๑๐๐) · ตามดิถีเกิด (ภาค ๑ หน้า ๑๐๑–๑๐๕) แสดงเรียงต่อกัน ฉบับเต็มอยู่ในแท็บทักษา·ฤกษ์
 </div></details></div>`;
 }
@@ -4282,13 +4325,19 @@ function secTopicsCard(ch, nowIn) {
   const Y = (!ch.synth && ch.born) ? trYear(ch, ageYang(ch.born, nowIn || appNow())) : null;
   const s7H = s7Hits(ch, Y), bg = s7Badges(ch);
   const byGrp = {};
-  matched.forEach(x => { const g = x.grp || "self"; (byGrp[g] = byGrp[g] || []).push(s9RenderItem(x.c, x.lines)); });
-  s7H.forEach(id => { const h = s7Line(ch, id, Y); if (h) { const g = s7GrpOf(id); (byGrp[g] = byGrp[g] || []).push(h); } });
-  const totalHit = Object.values(byGrp).reduce((n, items) => n + items.length, 0);
-  const body = S9_GRP.map(([g, lab]) => {
-    const arr = byGrp[g]; if (!arr || !arr.length) return "";
-    return `<details class="grp"><summary>${esc(lab)} <span class="sm2">(${TH(arr.length)} ข้อ)</span></summary>${arr.join("")}</details>`;
-  }).join("");
+  matched.forEach(x => { const g = x.grp || "self"; (byGrp[g] = byGrp[g] || []).push(x); });
+  const s7ByGrp = {};
+  s7H.forEach(id => { const h = s7Line(ch, id, Y), g = s7GrpOf(id); if (h) (s7ByGrp[g] || (s7ByGrp[g] = [])).push(h); });
+  const s7Count = Object.values(s7ByGrp).reduce((n, items) => n + items.length, 0);
+  const s7Body = S9_GRP.map(([g, lab]) => s7ByGrp[g]?.length ? `<details class="grp"><summary>${esc(lab)}</summary>${s7ByGrp[g].join("")}</details>` : "").join("");
+  const totalHit = matched.length + s7Count;
+  const body = S9_SECTION.map((label, i) => {
+    const h = S9_GRP.map(([g, lab]) => {
+      const arr = (byGrp[g] || []).filter(x => s9Rank(x.c) === i);
+      return arr.length ? `<details class="grp"><summary>${esc(lab)} <span class="sm2">(${TH(arr.length)} ข้อ)</span></summary>${arr.map(x => s9RenderItem(x.c, x.lines)).join("")}</details>` : "";
+    }).join("");
+    return h ? `<section class="s9-section" data-s9-kind="${i}"><h3>${label}</h3>${h}</section>` : "";
+  }).join("") + (s7Count ? `<details class="grp"><summary>เกร็ดตำรารองเล่ม ๗ (${TH(s7Count)} ข้อ)</summary>${s7Body}</details>` : "");
   return `<!--sec-s2--><div class="card"><h2>📗 มุมมองตำรารอง <span>ไม่คิดคะแนน · คะแนนหลักยึดตำราหลัก</span></h2>
 <div class="kv sub" style="font-size:12.5px">รวมข้อสังเกต ภพสัมพันธ์ คู่ดาว และสมการเรือนต่อเรือนที่ตรงกับผังนี้ <b>${TH(totalHit)}</b> ข้อ แบ่งตามหมวดเรื่องพร้อมรหัส [Ref] ท้ายข้อ · คะแนนและคำทายหลักยึดตำราหลักทั้งหมด</div>
 ${body || `<div class="kv">ไม่มีข้อของตำรารองที่เข้าเงื่อนไขในดวงนี้</div>`}
@@ -5277,7 +5326,7 @@ function natalCards0(ch) {
   // v1.1.0: จัดการ์ดทั้งหมดเป็น ๔ หมวด เปิดหมวดแรกไว้ ที่เหลือพับเก็บ — หน้าไม่ยาวเป็นพรวดเดียวอีก
   const SECS = [
     { id: "s1", ic: "🧭", nav: "พื้นดวง", n: "พื้นดวงและตารางสัตตเลข", h: "ภาพรวมพื้นดวง · ตารางสัตตเลข · ตัวเจ้าชะตา · คะแนนรายเรือน · ระดับพื้นดวง", open: true,
-      cards: [chartCard, knowCard(ch, rd, tt), overviewCard(ch, rd), starCard(ch), selfCard(ch, rd), housesCard(ch, rd), bbLevelCard(ch, rd), s9NatCard(ch)] },
+      cards: [chartCard, knowCard(ch, rd, tt), selfCard(ch, rd), housesCard(ch, rd), bbLevelCard(ch, rd), s9NatCard(ch)] },
     { id: "s2", ic: "📖", nav: "รายเรื่อง", n: "คำทำนายรายเรื่อง", h: "๒๘ เรื่องตามพื้นดวง · กฎเฉพาะในดวง · เกณฑ์ดวงหมอดู ๖ ข้อ · ธาตุเสียและโรค · ดวงแฝด", open: false,
       cards: [topicsCard(ch, tt), seerCard(ch, tt), bbHealthCard(ch), twCard(ch), secTopicsCard(ch)] },   // v5.3.0 เฟส C: การ์ดรวมมุมมองตำรารอง
     { id: "s3", ic: "🕰", nav: "ดวงจร", n: "ดวงจรและช่วงอายุ", h: "ดวงจรปีนี้ · จรเจาะเรื่อง · ดาวจรกระทบฐานบวก · เกณฑ์ในพื้นดวง", open: false,
@@ -5346,6 +5395,7 @@ const MP_INLINE = 0;  // v3.2.0 เดิม 700 · หัวพับทุก�
 const MP_TRM = { trY: "year", trM: "month", trD: "day", trYm: "yam" };
 let MP_DTC = null;
 const mpCSS = () => MP_DTC || (MP_DTC = dtCSS(CSS) + `
+.tr1{display:flex;align-items:center;gap:4px;flex-shrink:0}.tr1 .font-select{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}.tr1 .font-select a{margin:0;display:grid;place-items:center;min-width:32px;min-height:36px;border-radius:0;border:0;border-inline-end:1px solid var(--line);background:var(--tile);color:var(--tx);font-weight:750}.tr1 .font-select a:last-child{border:0}.tr1 .font-select [aria-current="true"]{background:var(--acc);color:var(--card)}.tr1 .font-select .font-small{font-size:12px}.tr1 .font-select .font-normal{font-size:15px}.tr1 .font-select .font-large{font-size:19px}@media(max-width:350px){.top1{flex-wrap:wrap}}
 .top1{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0 8px}.top1 a{color:inherit;text-decoration:none}.tl1 b{display:block;font-size:17px}.tl1 small{display:block;color:var(--tx3);font-size:12px}.tr1 a{display:inline-block;padding:4px 7px;font-size:16px;color:var(--tx2,inherit)}a.dsum{display:flex;align-items:center;gap:8px}a.dsum span.dsl{float:none;flex:1;min-width:0;color:inherit;line-height:1.5}a.dsum span.dsm{float:none;flex:none;white-space:nowrap;color:var(--tx3)}.tkgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0 8px}.tkc{position:relative;background:var(--tile);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:8px 4px;text-align:center;line-height:1.3}.tkc b{display:block;font-size:22px}.tkc small{display:block;color:var(--sub);font-size:12px}.tkc i{display:block;font-style:normal;font-size:12.5px;font-weight:600}.tkc.tkg i{color:#5fc48a}.tkc.tkb i{color:#e8756a}.tkc.tk0{background:transparent;color:var(--tx3)}.tkc.tk0 i{color:var(--tx3);font-weight:400;font-size:11px}.tkc.tkn{border:2px solid #e3c27a}.tkx{position:absolute;top:5px;right:7px;font-size:17px;line-height:1}.tcat{color:var(--tx3);font-size:11.5px;margin-left:4px}.lvg{border-top:1px solid var(--line);margin-top:8px;padding-top:2px}.lvg{border-top:0;margin-top:20px;padding-top:0}.lvg .lvh>.s7s,.lvg .lvh>summary{display:flex;align-items:baseline;gap:10px;margin:0 0 4px;padding:0 2px 6px;background:none;border:0;border-bottom:2px solid currentColor;border-radius:0;font-size:21px;font-weight:800;line-height:1.3}.lvg .lvh>.s7s:before,.lvg .lvh>summary:before{display:none !important}.lvg .lvh>summary::-webkit-details-marker{display:none}.lvg .lvh>.s7s:after,.lvg .lvh>summary:after{content:"›";margin-left:auto;color:var(--tx3);font-size:17px;font-weight:400}.lvg .lvh.s7o>.s7s:after,.lvg .lvh[open]>summary:after{content:"▾"}.lvg .lvh-g>.s7s,.lvg .lvh-g>summary{color:var(--good)}.lvg .lvh-m>.s7s,.lvg .lvh-m>summary{color:var(--mid)}.lvg .lvh-b>.s7s,.lvg .lvh-b>summary{color:var(--bad)}.lvg .lvn{font-size:13px;font-weight:400;color:var(--tx3)}.lvg .lvh>.s7b{padding-left:0}.ldot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:1px;background:var(--tx3)}.ldot-g{background:var(--good)}.ldot-m{background:var(--mid)}.ldot-b{background:var(--bad)}.dsum{display:block;padding:10px 2px;border-top:1px solid var(--line);color:inherit;text-decoration:none;font-size:13.5px}.dsum span{float:right;color:var(--tx3)}
 a.nrow{display:block;color:inherit;text-decoration:none}
 .tmb a small{display:block;font-size:10.5px;font-weight:600;margin-top:1px;color:var(--tx3)}.tmb a small.g{color:var(--good)}.tmb a small.b{color:var(--bad)}
@@ -5446,7 +5496,7 @@ const MP_TLAB = { yam: "ยามจร", day: "วันจร", month: "เด
 const mpHLOf = (M, k) => { const m = MP_TRM[k]; if (m && M.D.m[m]) return { r: M.D.m[m], mode: m, pane: M.D.m[m].h, cap: (M.HL[k] || {}).t || "" };
   const r = M.HL[k]; return r ? { r, pre: "c-", cap: r.t || "" } : null; };
 const MP_BAR_NODE = `<div class="bar"><a class="bb pri" href="satta7://up">←<span>กลับ</span></a><a class="bb" href="satta7://tabtop">🧭<span>หน้าแท็บ</span></a><a class="bb" href="satta7://list">☰<span>เลือกดวง</span></a><a class="bb" href="satta7://menu">⚙︎<span>เมนู</span></a></div>`;
-const mpPage = (M, title, body, bar) => page(`${APP} · ${title}`, tmStrip(body), "", bar).replace("</style>", mpCSS() + "</style>");
+const mpPage = (M, title, body, bar) => page(`${APP} · ${title}`, tmStrip(body), "", bar).replace("</style>", fontCSS(mpCSS()) + "</style>");
 function mpTabs(M, cur) {
   return `<div class="dock" id="dock"><div class="tabs" id="tabs">${M.order.map(id => { const x = M.tabs[id];
     return `<a class="tab${id === cur ? " on" : ""}" data-s="${id}" href="satta7://tab?t=${id}"><i>${x.ic}</i>${esc(x.nav)}</a>`; }).join("")}</div></div>`;
@@ -5490,7 +5540,7 @@ function mpRender0(M, e, tab) {
   const p = M.ch.p, name = esc(p.name || "ดวงกำเนิด");
   if (e.r === "tab") {
     const t = M.tabs[e.k] || M.tabs.s1, L = M.ch.lunar, dn = DAYS[M.ch.dayIdx], lab = L ? `${L.phase} ${TH(L.kham)} ค่ำ` : "", nk = M.ch.naksat ? " · ปี" + NAKSAT[M.ch.naksat - 1] : "";
-    const head = `<div class="top1"><a class="tl1" href="satta7://list"><b>${name}</b><small>${(() => { const b = dayLines(M.ch.born, !!M.ch.hasTime, M.ch.dayIdx, L, M.ch.naksat); return `${b.l1}${M.ch.p && M.ch.p.tAuto ? " · เวลาบันทึกดวง" : ""}<br>${b.l2}`; })()}</small></a><span class="tr1"><a href="satta7://th" title="โหมดสี มืด/สว่าง" onclick="this.href='satta7://th?sys='+(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')">${({ dark: "🌙", light: "☀️" })[themeOn()] || "🌓"}</a><a href="satta7://fs" title="ขนาดอักษร">🔠</a></span></div>
+    const head = `<div class="top1"><a class="tl1" href="satta7://list"><b>${name}</b><small>${(() => { const b = dayLines(M.ch.born, !!M.ch.hasTime, M.ch.dayIdx, L, M.ch.naksat); return `${b.l1}${M.ch.p && M.ch.p.tAuto ? " · เวลาบันทึกดวง" : ""}<br>${b.l2}`; })()}</small></a><span class="tr1"><a href="satta7://th" title="โหมดสี มืด/สว่าง" onclick="this.href='satta7://th?sys='+(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')">${({ dark: "🌙", light: "☀️" })[themeOn()] || "🌓"}</a>${fontSelect()}</span></div>
 ${daySum(M.ch)}`;
     if (t.id === "s3") { const md = MP_TMODE.includes(e.mode) ? e.mode : "year", r = M.D.m[md];   // รอบ 83 ข้อตัดสิน 104: เปิดที่ปีจร
       let TN = null; try { TN = trNow(M.ch); } catch (er) { TN = null; }
@@ -5836,12 +5886,12 @@ function r43Check() {
     const hasDim3 = P100.indexOf('class="kn-dim3"') > 0 && P100.indexOf("⚖️ ปาก · ใจ · ที่นั่ง") > 0 && P100.indexOf("🏛 ระดับพื้นดวง") > 0 && P100.indexOf("📗 มุมมองตำรารอง") > 0;
     const hasTp2 = P100.indexOf('class="kn-tp2"') > 0 && (P100.match(/class="kn-tpi"/g) || []).length === 6;
     const vertical = ids => ids.map(x => P100.indexOf(`id="${x}"`)).every((x,i,a) => x > 0 && (!i || x > a[i-1]));
-    const hasStf = vertical(["kn-stars-strong", "kn-stars-weak"]) && !P100.includes('name="knst"') && P100.includes("satta7://hl?k=st");
+    const hasStf = vertical(["kn-stars-strong", "kn-stars-weak"]) && !P100.includes('name="knst"') && Object.values(M100.nodes).some(x => x.html.includes("satta7://hl?k=st"));
     const hasSubt = vertical(["kn-birth-0", "kn-birth-1", "kn-birth-2"]) && !P100.includes('name="kntb"');
     const hasRef = P100.indexOf('class="reftag"') > 0 && P100.indexOf("สารบัญอ้างอิงตำรา (Ref)") > 0 && P100.indexOf("เล่ม ๙ · ไม่คิดคะแนน") < 0;
     const noStyleInBody = P100.slice(P100.indexOf("<body")).indexOf("<style") < 0;
     T(hasChart && hasHero && noDupPjt && hasDim3 && hasTp2 && hasStf && hasSubt && hasRef && noStyleInBody && REF_BOOKS.length === 6,
-      "R100 คงผังและสรุปพื้นดวง · ดาวเด่น–ดาวอ่อนและวัน–ยาม–ดิถีเรียงลงมา · ไฮไลต์ดาวได้ · คง Ref");
+      "R100 คงผังและสรุปพื้นดวง · ภพ–ดาวเด่น/ระวังรวมที่เดียว · วัน–ยาม–ดิถีเรียงลงมา · ไฮไลต์ดาวได้ · คง Ref");
   }
   { const c101 = natalChart({ id: "r101", iso: "1992-12-12", time: "10:50", name: "ทดสอบ", sex: "f" }), M101 = mpBuild(c101, null, null), P101 = mpRender(M101, { r: "tab", k: "s3", y: 0 }, "s3");
     const hasChart = P101.indexOf('id="chc"') > 0 && P101.indexOf("ตารางสัตตเลข") > 0;
@@ -5881,6 +5931,15 @@ function r43Check() {
     const coverage = [rule("002"), rule("003")].every(q => q.pr.length === 4 && q.pr.every(p => q.pseg[p] && S6B.pp.pg[p]));
     T(h.includes("ดาวเสาร์ (๗) ในภพ ปัตนิ สัมพันธ์กับ ทาสา ส่งผลให้") && !/วินาศ|พยายะ|ทาสี/.test(h) && h.includes("[S9-P3-015]"), "R104 ปัตนิ–ทาสาไม่ดึงคำอ่านของวินาศ/ทาสี");
     T(coverage && rule("002").pseg["4-6"].includes("ธาตุน้ำ") && rule("002").pseg["2-5"].includes("คู่ศัตรู") && rule("003").pseg["2-8"].includes("๑๕ + ๑๒ = ๒๗"), "R105 คู่ธาตุและคู่สมพลครบอย่างละ ๔ คู่ พร้อมคำอ่านและแหล่งอ้างอิง");
+  }
+  { const rule = S9E.tp.find(c => c.id === "S9-P3-002");
+    const sample = ["ตำแหน่ง ก", "ตำแหน่ง ข", "ตำแหน่ง ข"].map(pos => ({ pos, pair: "2-5", plain: S9_PAIR_PLAIN["2-5"], text: "คำอ่าน" }));
+    const h = s9RenderItem(rule, sample);
+    T((h.match(/เป็นคู่ธาตุดิน/g) || []).length === 1 && h.includes("พบคู่นี้อีก ๑ ตำแหน่ง") && h.includes("ตำแหน่ง ข"), "R106 คู่ดาวซ้ำแสดงผลครั้งเดียวและเก็บจุดพบเพิ่ม");
+    T(fontMode({ big:true }) === "large" && fontMode({ font:"small",big:true }) === "small" && fontMode({ font:"bad" }) === "normal" && (fontSelect().match(/satta7:\/\/fs\?m=/g) || []).length === 3, "R107 ขนาดอักษรสามระดับและย้ายค่าจากรุ่นก่อน");
+    const c = natalChart({ id: "r108", iso: "1992-12-12", time: "10:50", name: "ทดสอบ", sex: "f" }), m = mpBuild(c, null, null), p = mpRender(m, {r:"tab",k:"s1"}, "s1");
+    const s2 = secTopicsCard(c);
+    T((p.match(/class="kn-gauge"/g) || []).length === 1 && p.indexOf('id="kn-self-score"') < p.indexOf('id="kn-signals"') && !p.includes("ดาวไหนออกด้านดี") && [0,1,2].map(n => s2.indexOf(`data-s9-kind="${n}"`)).every((x,i,a) => x >= 0 && (!i || x > a[i-1])), "R108 คะแนนชุดเดียว ภพและดาวรวมกัน และดาวในภพอ่านก่อนภพสัมพันธ์");
   }
   return { ok, fail, text: `ตรวจรอบ 43 ${TH(ok)}/${TH(ok + fail)} ข้อ\n` + L.join("\n") };
 }
@@ -7106,7 +7165,7 @@ async function openApp() {
   const navTop = () => NAV[NAV.length - 1];
   // v3.0.0 จำตำแหน่งเลื่อนของหน้าปัจจุบันก่อนเปลี่ยนหน้า (แบบ yam7 ตอนเปลี่ยนขนาดตัวอักษร)
   const saveY = async () => { if (!ON_NATAL || !NAV) return; try { navTop().y = +(await wv.evaluateJavaScript("window.pageYOffset||0", false)) || 0; } catch (e) {} };
-  const mpGet = (p, ch) => { const key = [p.id, p.iso, p.time, p.sex, p.order, bigOn() ? 1 : 0, SIM ? "sim" + SIM.getTime() + (SIMO ? SIMO.m + SIMO.msg + "q" + (SIMO.q || "") : "") : Math.floor(Date.now() / 3600000)].join("|");
+  const mpGet = (p, ch) => { const key = [p.id, p.iso, p.time, p.sex, p.order, fontOn(), SIM ? "sim" + SIM.getTime() + (SIMO ? SIMO.m + SIMO.msg + "q" + (SIMO.q || "") : "") : Math.floor(Date.now() / 3600000)].join("|");
     if (!MPC || MPC.key !== key) MPC = { key, M: mpBuild(ch, SIM, SIM ? SIMO || { m: "year" } : null) }; return MPC.M; };
   const load = async (html, nat) => { if (SIM && html && html.indexOf('<div class="simb"') < 0) { const p2 = curProfile(), c2 = p2 ? natalChart(p2) : null; html = simDecor(html, c2 && !c2.err ? c2 : null, { at: SIM, m: SIMO ? SIMO.m : "year", msg: "" }); }   // v3.9.41 ทุกหน้าในโหมดจำลองมีแถบ
     ON_NATAL = !!nat; CURHTML = html; await wv.loadHTML(html); try { await wv.evaluateJavaScript(FIX_VP, false); } catch (e) {} };
@@ -7168,7 +7227,7 @@ async function openApp() {
         else if (path === "cmode" && navTop().r === "tab" && navTop().k === "s3" && MP_TMODE.includes(q.m)) { NAV[NAV.length - 1] = { r: "tab", k: "s3", mode: q.m, y: 0 }; await showChart(false); }
         else if (path === "cmode") { if ((q.m || "natal") === "natal") { if (["cell", "cmode"].includes(navTop().r)) NAV.pop(); await showChart(); } else await go("cmode", q.m); }
         else if (path === "th") { const eff = themeOn() || (q.sys === "light" ? "light" : "dark"); writeJSON(F_STATE, { ...stateGet(), theme: eff === "dark" ? "light" : "dark" }); await showChart(); }   // รอบ 82 สลับมืด/สว่าง
-        else if (path === "fs") { writeJSON(F_STATE, { ...stateGet(), big: !stateGet().big }); await showChart(); }   // v1.1.0 สลับขนาดตัวอักษร
+        else if (path === "fs") { fontPick(q.m || (bigOn() ? "normal" : "large")); await showChart(); }   // v1.1.0 สลับขนาดตัวอักษร
         else if (path === "num") { const p2 = curProfile(); const c2 = p2 && natalChart(p2);
           if (c2 && !c2.err && +q.n >= 1 && +q.n <= 7) await loadX(numHTML(c2, +q.n)); else await showChart(); }
         else if (path === "save") {
@@ -7182,13 +7241,18 @@ async function openApp() {
           await sleep(250);
           const m = new Alert(); m.title = `🔮 ${APP}`;
           m.message = menuMsg();   // รอบ 88 ข้อตัดสิน 115
-          ["📜 ดวงที่บันทึกไว้", "＋ เพิ่มดวงใหม่", "✎ แก้ดวงที่เลือก", `🔠 ${stateGet().big ? "กลับใช้ตัวอักษรปกติ" : "ใช้ตัวอักษรใหญ่"}`, "ℹ️ เกี่ยวกับและอ้างอิง"].forEach(t => m.addAction(t));
+          ["📜 ดวงที่บันทึกไว้", "＋ เพิ่มดวงใหม่", "✎ แก้ดวงที่เลือก", "🔠 ขนาดตัวอักษร", "ℹ️ เกี่ยวกับและอ้างอิง"].forEach(t => m.addAction(t));
           m.addCancelAction("ปิด");
           const i = await m.present();
           if (i === 0) await load(listHTML());
           else if (i === 1) await load(formHTML(null, null));
           else if (i === 2) await load(formHTML(curProfile(), null));
-          else if (i === 3) { writeJSON(F_STATE, { ...stateGet(), big: !stateGet().big }); await showChart(); }
+          else if (i === 3) {
+            const f = new Alert(); f.title = "ขนาดตัวอักษร";
+            FONT_MODES.forEach(([k, lab]) => f.addAction(`${fontOn() === k ? "✓ " : ""}${lab}`));
+            f.addCancelAction("ยกเลิก"); const ix = await f.present();
+            if (ix >= 0 && FONT_MODES[ix]) { fontPick(FONT_MODES[ix][0]); await showChart(); }
+          }
           else if (i === 4) await loadX(aboutHTML(aboutChart(), CHK_RES, {}));
         }
         else if (path === "term") { const p2 = curProfile(), c2 = p2 && natalChart(p2), th = termHTML(c2 && !c2.err ? c2 : null, q.k || "");   // v3.9.38 รอบ 66
